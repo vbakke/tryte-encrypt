@@ -1,0 +1,32 @@
+{
+  "name": "tryte-encrypt",
+  "version": "1.0.0",
+  "description": "Encrypting tryte strings, such as IOTA seeds",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vbakke/tryte-encrypt.git"
+  },
+  "keywords": [
+    "tryte",
+    "encryption",
+    "aes",
+    "iota",
+    "seeds"
+  ],
+  "author": "vbakke",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vbakke/tryte-encrypt/issues"
+  },
+  "homepage": "https://github.com/vbakke/tryte-encrypt#readme",
+  "dependencies": {
+    "aes-js": "^3.1.0",
+    "scryptsy": "^2.0.0",
+    "sha256": "^0.2.0",
+    "trytes": "^1.1.0"
+  }
+}
