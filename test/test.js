@@ -12,32 +12,52 @@ const crypt = require('../index.js');
 describe('Encrypt messages with parallelization = 1', function () {
     let parallelization = 1;
     let scryptOptions = { p: parallelization };
-    
+
     const tests = [
         {
             message: '9999',
             passphrase: 'hello',
-            encrypted: 'OACBBCZB'
+            encrypted: 'OACBBCJC'
+        },
+        {
+            message: 'ZZ',
+            passphrase: 'hello',
+            encrypted: '9HEBDF'
+        },
+        {
+            message: 'ZZZ',
+            passphrase: 'hello',
+            encrypted: '9HXCEF'
         },
         {
             message: 'ZZZZ',
             passphrase: 'hello',
-            encrypted: '9HNGJCZB'
+            encrypted: '9HNGJCJC'
+        },
+        {
+            message: 'ZZZZZ',
+            passphrase: 'hello',
+            encrypted: '9HNGZE'
+        },
+        {
+            message: 'ZZZZZZ',
+            passphrase: 'hello',
+            encrypted: '9HNGZESFBD'
         },
         {
             message: 'HAGDCD9DBFFA',
             passphrase: ['hello', ' hello ', 'Hæl lø'],
-            encrypted: ['I9NCYBIFYAADLBM9NA', 'TBXGWGPE9GEBR9DCZF', 'IBRCMCZF9GKFLCJAG9']
+            encrypted: ['I9NCYBIFYAADLBM9GA', 'TBXGWGPE9GEBR9DCUF', 'IBRCMCZF9GKFLCJAL9']
         },
         {
             message: 'KB99YZZZ',
             passphrase: ['hello', 'Æ lönger Ƥāssφräsę'],
-            encrypted: ['ZCCBPFLCMGBF', 'TBLDJHBFNBHA'],
+            encrypted: ['ZCCBPFLCMGMF', 'TBLDJHBFNBMA'],
         },
         {
             message: 'A9TEST9SEED99RMDKUTQVGFMYPYGAQVOTGJCEFIEELKHRBCZYKAOQQWFRYNGYDAEIKTHQJINZDPYNYOS9',
-            passphrase: 'hello',
-            encrypted: 'PAOHLIYFKBIDVCM9JFSDJCYCCBFGRHKAL9UAABKCB9HCMHZAPBJCYCTGFEOEKGJHJDBHXFSHGCLEJIHBPDDBIFE9FCWAXHYDDHVH'
+            passphrase: ['hello', 'snow \u2603\u{1F332}\u96EA \u0421\u043d\u0435\u0433 \u0e2b\u0e34\u0e30 \u0baa\u0ba9\u0bbf\u0ba4\u0bcd\u0ba4\u0bc2\u0bb5\u0bbf'],
+            encrypted: ['PAOHLIYFKBIDVCM9JFSDJCYCCBFGRHKAL9UAABKCB9HCMHZAPBJCYCTGFEOEKGJHJDBHXFSHGCLEJIHBPDDBIFE9FCWAXHYDDHMH', 'FGKGFHZFWAAHXGYGTHC9ZGAHCDU9GGK9JAMACIXFMFBHBH9HNEXGC99GNHKH9ECF9E9CZ9VHGGGHPEXGDBL9NFOAS9YEPGJHCBSD']
         },
         {
             message: 'A9TEST9ADDRESS99BTFKEHPQNGELDPWJSZCLRKU9EAIMDLNCOAIEI9JISIPWTSFUWIUCFWYXNUEPVAESHEQPKIHHNB',
@@ -57,22 +77,21 @@ describe('Encrypt messages with parallelization = 1', function () {
             if (typeof expectedEncryptions === 'string') expectedEncryptions = [expectedEncryptions];
 
 
+            // Make sure that the testes match in length
+            if (passphrases.length != expectedEncryptions.length)
+                throw new Error('Length mismatch for passphrase and encrypted for ' + test.message);
+
             for (let i = 0; i < passphrases.length; i++) {
                 let passphrase = passphrases[i];
                 let expectedEncryption = expectedEncryptions[i];
                 it('should encrypt: "' + test.message + '" with: "' + passphrase + '", expecting: "' + expectedEncryption, function () {
-                    /*
-                    if (passphrases.length != expectedEncryptions.length)
-                        throw new Error('Length mismatch for passphrase and encrypted for ' + test.message);
-
-                        */
-                        this.timeout(15 * 1000);
+                    this.timeout(15 * 1000);
 
                     //console.log('Encrypting "' + test.message + '" with "' + passphrase + '", expecting "' + expectedEncryption + '"');
 
                     let encrypted = crypt.encrypt(test.message, passphrase, scryptOptions);
                     let decrypted = crypt.decrypt(encrypted, passphrase, scryptOptions);
-                    //  console.log('DBG: Encrypted seed:', encrypted, expectedEncryption);
+                    //console.log('DBG: Encrypted trytes:', encrypted);
 
                     assert.isNotNull(encrypted, 'For ' + passphrase);
                     assert.strictEqual(encrypted, expectedEncryption, 'For ' + passphrase);
@@ -96,15 +115,15 @@ describe('Encrypt messages with parallelization 1 to 8', function () {
         {
             message: 'HAGDCD9DBFFA',
             passphrase: 'hello',
-            encrypted: ['NGAFJIDIWFUEFGODUD',
-                'I9NCYBIFYAADLBM9NA',
-                'CDMDIGGGPHND9ABBMD',
-                'KG9DB9EFSA9HQFHFBC',
-                'EAL9QBU9OGNDBERCME',
-                'UGVDRBDIQ99FAECGUB',
-                'OEUGVDC9KEEEUGB9G9',
-                '9ETGUFSAFHEH9CRFVA',
-                'ACZEPBLDDHHBMCRFYA']
+            encrypted: ['NGAFJIDIWFUEFGODCE',
+                'I9NCYBIFYAADLBM9GA',
+                'CDMDIGGGPHND9ABBFD',
+                'KG9DB9EFSA9HQFHFGC',
+                'EAL9QBU9OGNDBERCXE',
+                'UGVDRBDIQ99FAECGJB',
+                'OEUGVDC9KEEEUGB9L9',
+                '9ETGUFSAFHEH9CRFDB',
+                'ACZEPBLDDHHBMCRFIB']
         };
 
     let message = test.message;
@@ -122,6 +141,7 @@ describe('Encrypt messages with parallelization 1 to 8', function () {
             let start = Date.now();
             let encrypted = crypt.encrypt(test.message, passphrase, scryptOptions);
             let durationEncrypt = (Date.now() - start) / 1000;
+            //console.log('DBG: Encrypted trytes:', encrypted);
 
             // Time the decryption
             start = Date.now();
