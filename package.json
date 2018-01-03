@@ -1,6 +1,6 @@
 {
   "name": "tryte-encrypt",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Encrypting tryte strings, such as IOTA seeds",
   "main": "index.js",
   "scripts": {
