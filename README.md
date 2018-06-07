@@ -71,11 +71,11 @@ crypt.decrypt(encrypted, passphrase, {p: 2}, function (decrypted) {...} );
 
 
 ## Algorithm
-The encryption algorithm is based around the (BIP38)[https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki] standard for BitCoin. 
+The encryption algorithm is based around the [BIP38](https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki)standard for BitCoin. 
 
 Complexity is also a security risk. I've tried to simplyfy the BIP38 algorithm without loosing the security.
 
-This is currently a draft, so feel free to discusse the matter in the (issues)[https://github.com/vbakke/tryte-encrypt/issues].
+This is currently a draft, so feel free to discusse the matter in the [issues](https://github.com/vbakke/tryte-encrypt/issues).
 
 ### Encryption
 The encryption is using AES, SHA256 and Scrypt.
@@ -91,7 +91,7 @@ AES deals only with bytes, not trytes.
 Tryte and bytes have different ranges, and one cannot blindly convert from one to the other.
 
 1. The original seed is a text string with tryte3 characters (9 + A-Z).
-2. The seed is encoded as bytes using (vbakke/trytes)[[https://github.com/vbakke/trytes]].\
+2. The seed is encoded as bytes using [vbakke/trytes](https://github.com/vbakke/trytes).\
 (Actually, it is encoded as tryte5 (0-242), which fits inside a byte.)
 3. The bytes (tryte5) are encrypted, as above.
 4. The encrypted bytes are true bytes using the full range (0-255).
