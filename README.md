@@ -5,6 +5,13 @@ Encrypting tryte strings, such as IOTA seeds.
 
 `npm install tryte-encrypt`
 
+## Version 2.0
+The version 2.0 release is now using the asynchronous scrypt package [scrypt-async](https://www.npmjs.com/package/scrypt-async) instead of the former [scryptsy](https://www.npmjs.com/package/scryptsy).
+
+The tyre-encrypt algorithm has not changed, and it produces the same encryption, and decryption as v1.x.
+
+But the library is now using a callback function, and is not backwards compatibel with synchronous v1.x.
+
 ## Usage
 ```javascript
 const crypt = require("./src/tryte-encrypt.js");
@@ -12,8 +19,13 @@ const crypt = require("./src/tryte-encrypt.js");
 let seed = "A9TEST";
 let passphrase = "hello"
 
-let encrypted = crypt.encrypt(seed, passphrase);
-let decrypted = crypt.decrypt(encrypted, passphrase);
+crypt.encrypt(seed, passphrase, function (encrypted) {
+    console.log('Encrypted '+seed+' to '+encrypted);
+});
+
+crypt.decrypt(encryptedSeed, passphrase, function (decrypted) {
+    console.log('Decrypted '+encryptedSeed+' back to '+decrypted);
+});
 ```
 ## Example
 ```javascript
@@ -23,11 +35,19 @@ let seed = "A9TEST9SEED99RMDKUTQVGFMYPYGAQVOTGJCEFIEELKHRBCZYKAOQQWFRYNGYDAEIKTH
 let passphrase = "Ƥāssφräsę"
 console.log('Encrypting:', seed);
 
-let encrypted = crypt.encrypt(seed, passphrase);
-console.log('Encrypted:', encrypted, 'using', passphrase);
+crypt.encrypt(seed, passphrase, function (encrypted) {
+    console.log('Encrypted:', encrypted, 'using', passphrase);
 
-console.log('Decrypting...');
-let decrypted = crypt.decrypt(encrypted, passphrase);
+    console.log('Decrypting...');
+    crypt.decrypt(encrypted, passphrase, function (decrypted) {
+        if (seed === decrypted) {
+            console.log('Decrypted it back to original seed!');
+        } else {
+            console.log('Decryption failed to get the original seed!');
+        }
+    });
+});
+
 ```
 
 ## Tuning
@@ -35,7 +55,7 @@ By default, the passphrase is hashed using Scrypt with the same arguments as BIP
 ```javascript
 const scryptOptionsDefault = 
 {
-    N: Math.pow(2, 14), // The number of iterations (16384)
+    logN: 14,           // The number of iterations (2^14 = 16384)
     r: 8,               // Memory factor
     p: 8                // Parallelization factor
 };
@@ -43,10 +63,10 @@ const scryptOptionsDefault =
 
 You may override these, either all or some, as long as you make sure to use the same options when decrypting:
 ```javascript
-encrypted = crypt.encrypt(seed, passphrase, {N: Math.pow(2, 15)} );
-encrypted = crypt.encrypt(seed, passphrase, {r: 16, p: 2});
-encrypted = crypt.encrypt(seed, passphrase, {p: 2});
-decrypted = crypt.decrypt(encrypted, passphrase, {p: 2});
+crypt.encrypt(seed, passphrase, {logN: 15}, function (encrypted) {...} );
+crypt.encrypt(seed, passphrase, {r: 16, p: 2}, function (encrypted) {...} );
+crypt.encrypt(seed, passphrase, {p: 2}, function (encrypted) {...} );
+crypt.decrypt(encrypted, passphrase, {p: 2}, function (decrypted) {...} );
 ```
 
 

@@ -5,6 +5,35 @@ const crypt = require('../index.js');
 
 
 /**
+ * Test default scryptOptions
+ */
+describe('Encrypt using default scrypt options', function () {
+    const test =  {
+        message: 'A999TEST999SEED99999999999999999999999999999999999999999999999999999999999999999Z',
+        passphrase: 'Passφräsę',
+        encrypted: 'ZAC9UAOGGGNCTHPFPABGRHKARFDIBBFGMHGCTENBDCQFCBTELDREFFJAXGDGTGPDFFIBCFXCEHKFJAICNBDGEIQGCHAFGGZDDAUH'
+    };
+
+    it('should encrypt: "' + test.message + '" with: "' + test.passphrase + '"', function (done) {
+        crypt.encrypt(test.message, test.passphrase, function (encrypted) {
+            assert.isNotNull(encrypted, 'For ' + test.passphrase);
+            assert.strictEqual(encrypted, test.encrypted, 'For ' + test.passphrase);
+
+            crypt.decrypt(encrypted, test.passphrase, function (decrypted)  {
+
+                //console.log('DBG: Encrypted trytes:', encrypted);
+                
+                
+                assert.isNotNull(decrypted, 'For ' + test.passphrase);
+                assert.strictEqual(decrypted, test.message, 'For ' + test.passphrase);
+
+                done();
+            });
+        });
+    });
+});
+
+/**
  * Test differnt passphrases on the same message.
  * 
  * Turn parallelization down to 1, for faster testing.
@@ -64,6 +93,11 @@ describe('Encrypt messages with parallelization = 1', function () {
             passphrase: 'hello',
             encrypted: 'PAOHLIYFQGRDGI9ETGGDYDIEABFDEETCQ9BB9GN9QDGHWGB9UA9INHQ9X99IHITAEIEIEBPDZHGAMDJANGRFTDBEZHVH9AREBCNEIBSFX9KB'
         },
+        {
+            message: 'A999TEST999SEED99999999999999999999999999999999999999999999999999999999999999999Z',
+            passphrase: 'Ƥāssφräsę',
+            encrypted: 'EFVCIHFGBA9IGCUEN9LHAI9G9FDDI9MBS9IFWBHBJHBGQAEEV9IEJHWG9HSEKEUCDAIDQFICHFBGADZFZDVFUAPAGGXCLECFNEME'
+        },
 
     ];
 
@@ -84,38 +118,45 @@ describe('Encrypt messages with parallelization = 1', function () {
             for (let i = 0; i < passphrases.length; i++) {
                 let passphrase = passphrases[i];
                 let expectedEncryption = expectedEncryptions[i];
-                it('should encrypt: "' + test.message + '" with: "' + passphrase + '", expecting: "' + expectedEncryption, function () {
+                const local_i = i;
+                it('should encrypt: "' + test.message + '" with: "' + passphrase + '"', function () {
                     this.timeout(15 * 1000);
 
-                    //console.log('Encrypting "' + test.message + '" with "' + passphrase + '", expecting "' + expectedEncryption + '"');
+                    //console.log('DBG: Encrypting "' + test.message + '" with "' + passphrase + '"');
 
-                    let encrypted = crypt.encrypt(test.message, passphrase, scryptOptions);
-                    let decrypted = crypt.decrypt(encrypted, passphrase, scryptOptions);
-                    //console.log('DBG: Encrypted trytes:', encrypted);
+                    crypt.encrypt(test.message, passphrase, scryptOptions, function (encrypted) {
+                        assert.isNotNull(encrypted, 'For ' + passphrase);
+                        assert.strictEqual(encrypted, expectedEncryption, 'For ' + passphrase);
 
-                    assert.isNotNull(encrypted, 'For ' + passphrase);
-                    assert.strictEqual(encrypted, expectedEncryption, 'For ' + passphrase);
+                        crypt.decrypt(encrypted, passphrase, scryptOptions, function (decrypted) {
 
-                    assert.isNotNull(decrypted, 'For ' + passphrase);
-                    assert.strictEqual(decrypted, test.message, 'For ' + passphrase);
+                            //console.log('DBG: Encrypted trytes:', encrypted);
+                            
+                            
+                            assert.isNotNull(decrypted, 'For ' + passphrase);
+                            assert.strictEqual(decrypted, test.message, 'For ' + passphrase);
+                            if (local_i == passphrases.length)
+                                done();
+                        });
+                    });
                 });
             }
         }
     })
 
 });
-
+// */
 
 /**
  * Test same message and passphrase with different parallelization for Scrypt
  */
-describe('Encrypt messages with parallelization 1 to 8', function () {
+describe('Encrypt messages with increasing parallelization', function () {
 
     const test =
         {
             message: 'HAGDCD9DBFFA',
             passphrase: 'hello',
-            encrypted: ['NGAFJIDIWFUEFGODCE',
+            encrypted: [//'NGAFJIDIWFUEFGODCE',
                 'I9NCYBIFYAADLBM9GA',
                 'CDMDIGGGPHND9ABBFD',
                 'KG9DB9EFSA9HQFHFGC',
@@ -123,40 +164,152 @@ describe('Encrypt messages with parallelization 1 to 8', function () {
                 'UGVDRBDIQ99FAECGJB',
                 'OEUGVDC9KEEEUGB9L9',
                 '9ETGUFSAFHEH9CRFDB',
-                'ACZEPBLDDHHBMCRFIB']
+                'ACZEPBLDDHHBMCRFIB',
+                'NDQDOCGECFKCMGEDBH',
+                'EHCCCCR9EGDAHBKHJB',
+                'SABBRAMDX9ODEGXFDG',
+                'EFIGYFECMCJ9TEUEJG',
+                ]
         };
 
     let message = test.message;
     let passphrase = test.passphrase;
     for (let i = 0; i < test.encrypted.length; i++) {
+        const local_i = i;
         let expectedEncryption = test.encrypted[i];
-        let parallelization = i;
+        let parallelization = i+1;
         let scryptOptions = { p: parallelization };
 
 
-        it('should encrypt: "' + test.message + '" with parallelization ' + parallelization + ', expecting: "' + expectedEncryption + '"', function () {
+        it('should encrypt: "' + test.message + '" with parallelization ' + parallelization, function () {
             this.timeout(60 * 1000);
 
-            // Time the encryption
-            let start = Date.now();
-            let encrypted = crypt.encrypt(test.message, passphrase, scryptOptions);
-            let durationEncrypt = (Date.now() - start) / 1000;
-            //console.log('DBG: Encrypted trytes:', encrypted);
+            testEncryptDecrypt(message, passphrase, scryptOptions, test.encrypted[local_i], function () {
+                if (local_i == test.encrypted.length)
+                    done();
+            });
+        });
+    }
+});
+// */
 
-            // Time the decryption
-            start = Date.now();
-            let decrypted = crypt.decrypt(encrypted, passphrase, scryptOptions);
-            let durationDecrypt = (Date.now() - start) / 1000;
-            //console.log('Parallelization',parallelization,'Encrypted in', durationEncrypt.toFixed(1),'sec, and decrypted in',durationDecrypt.toFixed(1),'sec');
+/**
+ * Test same message and passphrase with different iterations for Scrypt
+ */
+describe('Encrypt messages with increasing iterations', function () {
 
-            assert.isNotNull(encrypted, 'For ' + passphrase);
-            assert.strictEqual(encrypted, expectedEncryption, 'For ' + passphrase);
+    const test =
+        {
+            message: 'HAGDCD9DBFFA',
+            passphrase: 'hello',
+            encrypted: [
+                'DGZBEGYFVBFEUBKAK9',
+                'FA9CRHVCXGXFNGYGGA',
+                'ACZEPBLDDHHBMCRFIB',
+                'TEI9G9RERALBSCUDPG',
+                'QGFHTFPGQAHHMGVENB',
+                'GCJDAGOFRG9HBBSGVF',
+                'JIEBSDVDLBCACCPDUH',
+            ]
+        };
 
-            assert.isNotNull(decrypted, 'For ' + passphrase);
-            assert.strictEqual(decrypted, test.message, 'For ' + passphrase);
+    let message = test.message;
+    let passphrase = test.passphrase;
+    for (let i = 0; i < test.encrypted.length; i++) {
+        const local_i = i;
+        let expectedEncryption = test.encrypted[i];
+        let logN = i + 12;
+        let scryptOptions = { logN };
+
+
+        it('should encrypt: "' + test.message + '" with logN:' + logN + '', function () {
+            this.timeout(60 * 1000);
+
+            testEncryptDecrypt(message, passphrase, scryptOptions, test.encrypted[local_i], function () {
+                if (local_i == test.encrypted.length)
+                    done();
+            });
         });
     }
 
+});
+// */
+
+/**
+ * Test same message and passphrase with different iterations for Scrypt
+ */
+describe('Encrypt messages with increasing toughness', function () {
+
+    const test =
+        {
+            message: 'A999TEST999SEED99999999999999999999999999999999999999999999999999999999999999999Z',
+            passphrase: 'Ƥāssφräsę',
+            encrypted: [
+                'VHTEIGE9LGC9XCQBAF9EAHIF99JADIKBQ99DDGWBTACDRDGA9HMFOCPEPFDCECJCUAXHMHR9WBTHPGLHHFQFSDOBHFGAVCICXBRD',
+                'FIGAV9XDJFPDCHHDUHFBSDXBJEQAP9QBBGVCOBX9PDGGHFRDQAQ9VAUHNHODWDVHMARCZGE9WFCGN9AIJEZCIDCGY9BENEQEACGC',
+                'TFTCYFMFI9QDMHTADEJBAFCCHBCDAGFHWEVGVBBGDDODO9FBSEL9AG9EQEIG9EWGM9RFT99FH9XCO9KGZFO9GHFHVACARAFIEIXA',
+                'WBD9KIIGKFQDFCEGKBOCEBLAHDLAFHLDCHJEYHAGYB9GZBJDQHM9RAY9PDFCUHPELFNCABV9YDVAYBA9UEPBJBGBQHBDHAYCYCRA',
+                'EIVHFDZCZBXFUGEGTALBEGHII9MHPFOHTBUFICB9I9PFTGS9YGYGIAPCCCDAYEN9CARGTHCHNHSFMDX9D9GEQDIGIARELIRDHGUH',
+            ]
+        };
+
+    let message = test.message;
+    let passphrase = test.passphrase;
+    for (let i = 0; i < test.encrypted.length; i++) {
+        const local_i = i;
+        let expectedEncryption = test.encrypted[i];
+        let logN = i + 14;
+        let p = i + 8;
+        let r = i + 8;
+        let scryptOptions = { logN, p, r };
+
+
+        it('should encrypt: "' + test.message + '" with logN:' + logN + ',p:' + p + ',r:' + r + ', expecting: "' + expectedEncryption + '"', function () {
+            this.timeout(60 * 1000);
+
+            testEncryptDecrypt(message, passphrase, scryptOptions, test.encrypted[local_i], function () {
+                if (local_i == test.encrypted.length)
+                    done();
+            });
+        });
+    }
 
 });
 
+
+
+
+
+/**
+ * Test function for encrypting, and then decrypting back to original message
+ * 
+ * @param {*} message 
+ * @param {*} passphrase 
+ * @param {*} scryptOptions 
+ * @param {*} expected 
+ * @param {*} callback 
+ */
+function testEncryptDecrypt(message, passphrase, scryptOptions, expected, callback) {
+    // Time the encryption
+    let start = Date.now();
+    crypt.encrypt(message, passphrase, scryptOptions, function (encrypted) {
+
+        let durationEncrypt = (Date.now() - start) / 1000;
+        //console.log('DBG: Encrypted trytes:', encrypted);
+        assert.isNotNull(encrypted, 'For ' + passphrase);
+        assert.strictEqual(encrypted, expected, 'For ' + passphrase);
+
+
+        // Time the decryption
+        start = Date.now();
+        let decrypted = crypt.decrypt(encrypted, passphrase, scryptOptions, function (decrypted) {
+
+            let durationDecrypt = (Date.now() - start) / 1000;
+            //console.log('DBG: Encrypted in', durationEncrypt.toFixed(1),'sec, and decrypted in',durationDecrypt.toFixed(1),'sec');
+
+            assert.isNotNull(decrypted, 'For ' + passphrase);
+            assert.strictEqual(decrypted, message, 'For ' + passphrase);
+            callback();
+        });
+    });
+}

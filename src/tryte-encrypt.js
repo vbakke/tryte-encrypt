@@ -1,14 +1,14 @@
 /**
  * 
  */
-const scrypt = require('scryptsy');
+const scrypt = require('scrypt-async');
 const aes = require('aes-js');
 const sha256 = require('sha256');
 const Trytes = require('trytes');
 
 const scryptOptionsDefault = 
 {
-    N: Math.pow(2, 14), // The number of iterations (16384)
+    logN: 14,           // The number of iterations (2^14 = 16384)
     r: 8,               // Memory factor
     p: 8                // Parallelization factor
 };
@@ -23,16 +23,24 @@ const scryptOptionsDefault =
  * @param {*} seed A tryte string representing the IOTA seed
  * @param {*} passphrase A unicode text string
  * @param {*} scryptOptions Optional scrypt tuning, e.g. `{p: 4}`
+ * @param {*} callback `function (encrypted)` 
  */
-function encrypt(seed, passphrase, scryptOptions) {
+function encrypt(seed, passphrase, scryptOptions, callback) {
+    if (typeof scryptOptions === 'function') {
+        callback = scryptOptions;
+        scryptOptions = {};
+    }
+
     let seedBytes = Trytes.encodeTryteStringAsBytes(seed);
     
-    let cryptor = createAESCryptor(passphrase, scryptOptions);
+    createAESCryptor(passphrase, scryptOptions, function (cryptor) {
+        let encryptedSeedBytes = cryptor.encrypt(seedBytes);
 
-    let encryptedSeedBytes = cryptor.encrypt(seedBytes);
+        let encryptedSeed = Trytes.encodeBytesAsTryteString(encryptedSeedBytes);
+        callback(encryptedSeed);
+    });
+
     
-    let encryptedSeed = Trytes.encodeBytesAsTryteString(encryptedSeedBytes);
-    return encryptedSeed;
 }
 
 /**
@@ -43,24 +51,31 @@ function encrypt(seed, passphrase, scryptOptions) {
  * @param {*} encryptedSeed 
  * @param {*} passphrase 
  * @param {*} scryptOptions 
+ * @param {*} callback `function (decrypted)` 
  */
-function decrypt(encryptedSeed, passphrase, scryptOptions) {
+function decrypt(encryptedSeed, passphrase, scryptOptions, callback) {
+    if (typeof scryptOptions === 'function') {
+        callback = scryptOptions;
+        scryptOptions = {};
+    }
+
     let encryptedSeedBytes = Trytes.decodeBytesFromTryteString(encryptedSeed);
     
-    let cryptor = createAESCryptor(passphrase, scryptOptions);
-
-    let seedBytes = cryptor.decrypt(encryptedSeedBytes);
-    let seed = Trytes.decodeTryteStringFromBytes(seedBytes);
-    
-    return seed;
+    let cryptor = createAESCryptor(passphrase, scryptOptions, function (cryptor) {
+        
+        let seedBytes = cryptor.decrypt(encryptedSeedBytes);
+        let seed = Trytes.decodeTryteStringFromBytes(seedBytes);
+        
+        callback(seed);
+    });
 }
 
 
-function createAESCryptor(passphrase, scryptOptions) {
+function createAESCryptor(passphrase, scryptOptions, callback) {
     // Merge given scrypt options, overriding default ones
     scryptOptions = Object.assign({}, scryptOptionsDefault, scryptOptions);
     //passphrase = passphrase.trim();
-
+    
     // Converts the unicode string to bytes, using the UTF-8 encoding
     let passphraseBytes = aes.utils.utf8.toBytes(passphrase);
     
@@ -69,12 +84,13 @@ function createAESCryptor(passphrase, scryptOptions) {
     
     // Create encryption key (32 bytes)
     let numBytes = 32;
-    let encryptionKey = scrypt(passphrase, hashedPassphrase, scryptOptions.N, scryptOptions.r, scryptOptions.p, numBytes);
-    //console.log('Created key "'+encryptionKey.toString('hex').toUpperCase()+"");
+    scryptOptions = Object.assign(scryptOptions, {encoding: 'binary', dkLen: numBytes}); 
+    let encryptionKey = scrypt(passphrase, hashedPassphrase, scryptOptions, function (encryptionKey) {
+        let cryptor = new aes.ModeOfOperation.ctr(encryptionKey); 
+        //console.log('Created key "'+encryptionKey.toString('hex').toUpperCase()+"");
 
-    // Create 
-    let cryptor = new aes.ModeOfOperation.ctr(encryptionKey); 
-    return cryptor;
+        callback(cryptor);
+    });  
 }
 
 
