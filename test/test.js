@@ -126,7 +126,7 @@ describe('Encrypt messages with parallelization = 1', function () {
 
                     crypt.encrypt(test.message, passphrase, scryptOptions, function (encrypted) {
                         assert.isNotNull(encrypted, 'For ' + passphrase);
-                        assert.strictEqual(encrypted, expectedEncryption, 'For ' + passphrase);
+                        assert.strictEqual(encrypted.split(':')[0], expectedEncryption, 'For ' + passphrase);
 
                         crypt.decrypt(encrypted, passphrase, scryptOptions, function (decrypted) {
 
@@ -297,7 +297,7 @@ function testEncryptDecrypt(message, passphrase, scryptOptions, expected, callba
         let durationEncrypt = (Date.now() - start) / 1000;
         //console.log('DBG: Encrypted trytes:', encrypted);
         assert.isNotNull(encrypted, 'For ' + passphrase);
-        assert.strictEqual(encrypted, expected, 'For ' + passphrase);
+        assert.strictEqual(encrypted.split(':')[0], expected, 'For ' + passphrase);
 
 
         // Time the decryption

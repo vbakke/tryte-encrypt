@@ -60,20 +60,32 @@ const scryptOptionsDefault =
     p: 8                // Parallelization factor
 };
 ```
+In addition, the option ```toughness``` is introduced, where a toughness of 1 is equivalent to ```{logN: 15, r: 9, p:9}```.
 
-You may override these, either all or some, as long as you make sure to use the same options when decrypting:
 ```javascript
 crypt.encrypt(seed, passphrase, {logN: 15}, function (encrypted) {...} );
 crypt.encrypt(seed, passphrase, {r: 16, p: 2}, function (encrypted) {...} );
 crypt.encrypt(seed, passphrase, {p: 2}, function (encrypted) {...} );
 crypt.decrypt(encrypted, passphrase, {p: 2}, function (decrypted) {...} );
+// Toughness: The two encryptions below will yield the same result
+crypt.decrypt(encrypted, passphrase, {toughness: 2}, function (decrypted) {...} );
+crypt.decrypt(encrypted, passphrase, {logN: 16, r:10, p:10}, function (decrypted) {...} );
 ```
 
 
-## Algorithm
-The encryption algorithm is based around the [BIP38](https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki)standard for BitCoin. 
+The encrypted seed will by default contain metadata about which scrypt options where used when encrypting.
+The reasoning is that the security sould lie in the passphrase, and the toughness level, not in remembering wich scrypt parameters you used when encrypting your seed.
 
-Complexity is also a security risk. I've tried to simplyfy the BIP38 algorithm without loosing the security.
+The metadata is parsed when decrypting the seed. 
+
+Colon is used as a demiliter, since is it not a valid tryte character, but is a valid alphanumeric QR code character. It makes it easy to split the seed from the metadata, both visually and programatically.
+
+
+
+## Algorithm
+The encryption algorithm is based around the [BIP38](https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki) standard for BitCoin. 
+
+Complexity is also a security risk. I've tried to simplify the BIP38 algorithm without losing the security.
 
 This is currently a draft, so feel free to discusse the matter in the [issues](https://github.com/vbakke/tryte-encrypt/issues).
 
